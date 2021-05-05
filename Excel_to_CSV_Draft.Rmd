@@ -1,0 +1,86 @@
+---
+title: "Master Data File (Excel) to CSV"
+author: "Yejae Kim"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(readxl)
+library(tidyverse)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning=FALSE}
+# Load in Dataset
+data <- excel_csv("MasterData.xlsx")
+```
+
+```{r, warning=FALSE}
+# Create Function to Make Master Data File Compatible for ArcGIS Online
+excel_csv <- function(file) {
+  # Create "Services" Dataset
+  services_1 <- data.frame(
+    service_1  = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 99),
+    Service_1N = c("permanent housing", "transitional housing", "employment training and/or referrals", "employment (re-entry-friendly employer)",
+                   "GED/higher education programs", "food/clothing assistance", "legal counseling", "general case management", "mentoring/life coaching",
+                   "family and child welfare", "victim-offender reconciliation", "mental health/counseling: individual", "mental health/counseling: family",
+                   "mental health/counseling: victims", "hospitality in worship", "transportation assistance/resources", "addiction recovery", "literacy/ESL",
+                   "financial empowerment", "physical healthcare", "other")
+  )
+  services_2 <- data.frame(
+    service_2  = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 99),
+    Service_2N = c("permanent housing", "transitional housing", "employment training and/or referrals", "employment (re-entry-friendly employer)",
+                   "GED/higher education programs", "food/clothing assistance", "legal counseling", "general case management", "mentoring/life coaching",
+                   "family and child welfare", "victim-offender reconciliation", "mental health/counseling: individual", "mental health/counseling: family",
+                   "mental health/counseling: victims", "hospitality in worship", "transportation assistance/resources", "addiction recovery", "literacy/ESL",
+                   "financial empowerment", "physical healthcare", "other")
+  )
+  services_3 <- data.frame(
+    service_3  = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 99),
+    Service_3N = c("permanent housing", "transitional housing", "employment training and/or referrals", "employment (re-entry-friendly employer)",
+                   "GED/higher education programs", "food/clothing assistance", "legal counseling", "general case management", "mentoring/life coaching",
+                   "family and child welfare", "victim-offender reconciliation", "mental health/counseling: individual", "mental health/counseling: family",
+                   "mental health/counseling: victims", "hospitality in worship", "transportation assistance/resources", "addiction recovery", "literacy/ESL",
+                   "financial empowerment", "physical healthcare", "other")
+  )
+  house_gen <- data.frame(
+    house_gen = c(1, 2, 3),
+    House_Gen = c("male", "female", "co-ed")
+  )
+  
+  # Stop Function When Missing Data
+  if (is.na(c(data$lat, data$long, data$service_1))) {
+    stop("Please Provide the Master Data File.")
+  }
+  
+  # Load in Master Data File
+  data <- read_excel(file)
+  
+  data <- data %>% 
+    # Create Variables: Necessary for Join
+    mutate(
+      street_a_1 = street_add2
+    ) %>% 
+    # Select Necessary Variables
+    select(NID, ID, org_name, county, street_add, street_a_1, city, zipcode, plus_four, lat, long,
+           org_url, phone, service_1, service_2, service_3, notes, house_gen)
+  
+  # Join Services to the Main Dataset
+  data <- left_join(data, services_1, by = "service_1")
+  data <- left_join(data, services_2, by = "service_2")
+  data <- left_join(data, services_3, by = "service_3")
+  data <- left_join(data, house_gen, by = "house_gen")
+  
+  data <- data %>% 
+    select(NID, ID, org_name, county, street_add, street_a_1, city, zipcode, plus_four, lat, long,
+           org_url, phone, Service_1N, service_1, Service_2N, service_2, Service_3N, service_3, 
+           notes, House_Gen, house_gen)
+  
+  return(data)
+}
+```
+
+
+
